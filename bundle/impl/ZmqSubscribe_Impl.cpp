@@ -19,7 +19,7 @@ ZmqSubscribe_Impl::~ZmqSubscribe_Impl()
 int ZmqSubscribe_Impl::Exec()
 {
 #ifndef NDEBUG
-    std::cout << "0MQ Subscribe URL : " << _config.remote_url_ << std::endl;
+    std::cout << "0MQ[" << (int)_config.vehicle_id_ << "] Subscribe URL : " << _config.remote_url_ << std::endl;
 #endif
 
     int const timeout_ms = RCV_TIMEOUT_MS;
@@ -55,7 +55,10 @@ void ZmqSubscribe_Impl::Stop()
 void ZmqSubscribe_Impl::run(uint8_t vehicle_id)
 {
     zmq::message_t message;
-    ZMQ::Packet    packet;
+    ZMQ::Message   msg_text;
+
+    // for stabilization delay
+    boost::this_thread::sleep_for(boost::chrono::milliseconds(500));
 
     while (not _thread->interruption_requested())
     {
@@ -65,15 +68,15 @@ void ZmqSubscribe_Impl::run(uint8_t vehicle_id)
         {
             auto size = result.value();
 
-            std::memcpy(&packet, message.data(), size);
-            if (packet.header_.vehicle_id_ != vehicle_id)
+            std::memcpy(&msg_text, message.data(), size);
+            if (msg_text.header_.vehicle_id_ != vehicle_id)
                 continue;
 
             ZMQ::Footer footer {
-                .checksum_ = Checksum::crc8ccitt(reinterpret_cast<uint8_t*>(&packet), size - sizeof(ZMQ::Footer)),
+                .checksum_ = Checksum::crc8ccitt(reinterpret_cast<uint8_t*>(&msg_text), size - sizeof(ZMQ::Footer)),
             };
-            if (footer.checksum_ == packet.footer_.checksum_)
-                _sigMessageArrived(packet);
+            if (footer.checksum_ == msg_text.footer_.checksum_)
+                _sigMessageArrived(msg_text);
 
             message.rebuild();
         }

@@ -14,19 +14,20 @@
 #define MAVMSG_COMP_ID_FCS      MAV_COMP_ID_PATHPLANNER     ///< onboard computer (mission computer)
 #define MAVMSG_COMP_ID_GCS      MAV_COMP_ID_MISSIONPLANNER  ///< GCS (QGC등)
 
-#define MAVMSG_V2EXT_FEATURE 40001
+#define MAVMSG_V2EXT_TYPE_FEATURE 40001
 
 #pragma region mav_namespace
 namespace MAV
 {
 /**
- * @brief   MAVMSG_V2EXT_FEATURE 메세지 처리
+ * @brief   MAVMSG_V2EXT_TYPE_FEATURE 메세지 처리
  */
 #pragma pack(push, 1)
 struct Feature
 {
     bool log_capture_ { false };      ///< 외부 메모리에 로그 저장 (암호화 포함)
     bool volatile_mission_ { false }; ///< 미션비행 정보를 SD카드에 저장하지 않음
+    bool small_swarm_ { false };      ///< 소규모 군집 제어
 };
 #pragma pack(pop)
 
@@ -34,12 +35,11 @@ struct Feature
  * @brief   MAVLink 메세지를 간단하게 핸들링하기 위한 구조체/공용체 정의
  */
 #pragma pack(push, 1)
-struct Packet
+union Message
 {
-    union Payload
-    {
-        Feature feature_; ///< vehicle의 활성화 기능
-    } payload_;
+    uint8_t stream_[MAVLINK_MSG_V2_EXTENSION_FIELD_PAYLOAD_LEN]; ///< MAVLink V2 Extension 메세지의 최대 크기
+
+    Feature feature_; ///< vehicle의 활성화 기능
 };
 #pragma pack(pop)
 }

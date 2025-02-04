@@ -32,7 +32,12 @@ public:
 
     int  Exec();
     void Stop();
-    int  Publish(ZMQ::Packet& packet);
+    /**
+     * @brief   ZeroMQ 메세지 전송
+     * @param   msg_text    사용자 정의 메세지
+     * @return  0:success, other:failed
+     */
+    int  Publish(ZMQ::Message& msg_text);
 
 private:
 

@@ -25,10 +25,10 @@ public:
 
     struct Config
     {
-        uint8_t                       vehicle_id_;    ///< 편대 구성원으로서의 지위 식별자. "ZmqMessage.h" 참고.
-        std::shared_ptr<MavVehicle>   mav_vehicle_;   ///< MavVehicle의 instance.
-        std::shared_ptr<ZmqPublish>   zmq_publish_;   ///< 편대 구성원에게 메세지 전달
-        std::shared_ptr<ZmqSubscribe> zmq_subscribe_; ///< 편대 구성원(들)의 메세지 수신
+        uint8_t                                    vehicle_id_;     ///< 편대 구성원으로서의 지위 식별자. "ZmqMessage.h" 참고.
+        std::shared_ptr<MavVehicle>                mav_vehicle_;    ///< MavVehicle의 instance.
+        std::shared_ptr<ZmqPublish>                zmq_publish_;    ///< 편대 구성원에게 메세지 전달
+        std::shared_ptr<std::vector<ZmqSubscribe>> zmq_subscribes_; ///< 편대 구성원(들)의 메세지 수신
     };
 
     explicit SmallSwarm(Config& config);
@@ -39,7 +39,7 @@ public:
 
 private:
 
-    std::unique_ptr<SmallSwarm_Impl> _impl; ///< SmallSwarm 클래스의 implementation
+    std::shared_ptr<SmallSwarm_Impl> _impl; ///< SmallSwarm 클래스의 implementation
 
 #pragma endregion method_member
 

@@ -9,15 +9,10 @@
 #pragma region public_method
 
 AppMain::AppMain(std::string& config_file)
-    : _config_file(config_file)
-{
-}
-
-int AppMain::Exec()
 {
     try
     {
-        std::ifstream config_stream(_config_file);
+        std::ifstream config_stream(config_file);
         Json::Value   config_value;
 
         if (config_stream.is_open())
@@ -47,7 +42,7 @@ int AppMain::Exec()
             if (plugin_name.compare(JSON_KEY_PLUGIN_SMALL_SWARM) == 0)
             {
                 Json::Value json_value = config_value[JSON_KEY_SMALL_SWARM_SECTION];
-                pluginSmallSwarm(json_value);
+                _pluginSmallSwarm(json_value);
             }
         }
     }
@@ -55,22 +50,21 @@ int AppMain::Exec()
     {
         std::cerr << e.what() << std::endl;
     }
+}
 
-    // ZMQ::Packet packet;
-    // std::memset(reinterpret_cast<void*>(&packet), 0, sizeof(packet));
+int AppMain::Exec()
+{
+    MAV::Message feature_message {
+        .feature_ { 0 }
+    };
 
-    // packet.header_.vehicle_id_ = ZMQ_VEHICLE_ID_LEADER;
-    // packet.header_.message_id_ = ZMQ_MSG_VEHICLE_POSITION;
-    // packet.payload_.stream_[0] = 3;
-    // packet.payload_.stream_[1] = 4;
-    // packet.payload_.stream_[2] = 5;
-    // packet.payload_.stream_[3] = 6;
+    startup(feature_message.feature_);
 
     for (;;)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(LOOP_DELAY_MS));
 
-        /// @todo   mav_vehicle로 mavlink v2 extension 메세지를 전송하도록 (어디로?)
+        _mav_vehicle->PublishMessage(MAVMSG_COMP_ID_GCS, MAVMSG_V2EXT_TYPE_FEATURE, feature_message);
     }
 
     return 0;
@@ -80,14 +74,14 @@ int AppMain::Exec()
 
 #pragma region private_method
 
-int AppMain::pluginSmallSwarm(Json::Value& json)
+void AppMain::_pluginSmallSwarm(Json::Value& json)
 {
     ZmqPublish::Config                pub_config;
     ZmqSubscribe::Config              sub_config;
     std::optional<ZmqPublish::Config> publish_option;
-    std::vector<ZmqSubscribe::Config> sub_config_list;
+    std::vector<ZmqSubscribe::Config> subscribe_configs;
 
-    if (json[JSON_KEY_SMALL_SWARM_LEADER].asBool() == true)
+    if (json[JSON_KEY_SMALL_SWARM_LEADER].asBool())
     {
         pub_config.vehicle_id_ = ZMQ_VEHICLE_ID_LEADER;
         pub_config.local_url_  = json[JSON_KEY_SMALL_SWARM_LEADER_URL].asString();
@@ -95,9 +89,9 @@ int AppMain::pluginSmallSwarm(Json::Value& json)
 
         sub_config.vehicle_id_ = ZMQ_VEHICLE_ID_SUB_LEADER;
         sub_config.remote_url_ = json[JSON_KEY_SMALL_SWARM_SUB_LEADER_URL].asString();
-        sub_config_list.push_back(sub_config);
+        subscribe_configs.push_back(sub_config);
     }
-    else if (json[JSON_KEY_SMALL_SWARM_SUB_LEADER].asBool() == true)
+    else if (json[JSON_KEY_SMALL_SWARM_SUB_LEADER].asBool())
     {
         pub_config.vehicle_id_ = ZMQ_VEHICLE_ID_SUB_LEADER;
         pub_config.local_url_  = json[JSON_KEY_SMALL_SWARM_SUB_LEADER_URL].asString();
@@ -105,17 +99,17 @@ int AppMain::pluginSmallSwarm(Json::Value& json)
 
         sub_config.vehicle_id_ = ZMQ_VEHICLE_ID_LEADER;
         sub_config.remote_url_ = json[JSON_KEY_SMALL_SWARM_LEADER_URL].asString();
-        sub_config_list.push_back(sub_config);
+        subscribe_configs.push_back(sub_config);
     }
     else
     {
         sub_config.vehicle_id_ = ZMQ_VEHICLE_ID_LEADER;
         sub_config.remote_url_ = json[JSON_KEY_SMALL_SWARM_LEADER_URL].asString();
-        sub_config_list.push_back(sub_config);
+        subscribe_configs.push_back(sub_config);
 
         sub_config.vehicle_id_ = ZMQ_VEHICLE_ID_SUB_LEADER;
         sub_config.remote_url_ = json[JSON_KEY_SMALL_SWARM_SUB_LEADER_URL].asString();
-        sub_config_list.push_back(sub_config);
+        subscribe_configs.push_back(sub_config);
     }
 
     int vehicle_id    = json[JSON_KEY_SMALL_SWARM_MEMBER_NO].asInt();
@@ -135,28 +129,63 @@ int AppMain::pluginSmallSwarm(Json::Value& json)
         {
             sub_config.vehicle_id_ = member_list[n];
             sub_config.remote_url_ = json[connect_url].asString();
-            sub_config_list.push_back(sub_config);
+            subscribe_configs.push_back(sub_config);
         }
     }
 
     if (not publish_option.has_value())
     {
+#ifndef NDEBUG
         std::cerr << "0MQ Publisher is missing" << std::endl;
-        return -1;
+#endif
+        throw -EBADR;
     }
 
     auto port = boost::lexical_cast<uint16_t>(pub_config.local_url_.substr(pub_config.local_url_.rfind(":") + 1));
 
+    // publish의 경우, 로컬 주소를 0.0.0.0으로 변경해 줘야 함
     pub_config.local_url_ = std::string("tcp://0.0.0.0:") + std::to_string(port);
 
-    _zmq_publish = std::make_shared<ZmqPublish>(pub_config);
-    _zmq_publish->Exec();
+    _zmq_publish    = std::make_shared<ZmqPublish>(pub_config);
+    _zmq_subscribes = std::make_shared<std::vector<ZmqSubscribe>>();
 
-    for (auto it : sub_config_list)
+    for (auto it : subscribe_configs)
     {
         ZmqSubscribe subs(it);
-        _zmq_subs_list.push_back(subs);
-        subs.Exec();
+        _zmq_subscribes->push_back(subs);
+    }
+
+    SmallSwarm::Config swarm_config {
+        .vehicle_id_     = pub_config.vehicle_id_,
+        .mav_vehicle_    = _mav_vehicle,
+        .zmq_publish_    = _zmq_publish,
+        .zmq_subscribes_ = _zmq_subscribes,
+    };
+    _small_swarm = std::make_unique<SmallSwarm>(swarm_config);
+}
+
+int AppMain::startup(MAV::Feature& feature)
+{
+    // bundles
+
+    if (_mav_vehicle) // exception?
+        _mav_vehicle->Exec();
+    if (_mqtt_client) // exception?
+        _mqtt_client->Exec();
+    if (_zmq_publish) // exception?
+        _zmq_publish->Exec();
+    if (_zmq_subscribes) // exception?
+    {
+        for (auto it : *_zmq_subscribes)
+            it.Exec();
+    }
+
+    // plugins
+
+    if (_small_swarm)
+    {
+        _small_swarm->Exec();
+        feature.small_swarm_ = true;
     }
 
     return 0;

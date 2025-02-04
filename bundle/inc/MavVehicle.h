@@ -33,6 +33,14 @@ public:
 
     int  Exec();
     void Stop();
+    /**
+     * @brief   MAVLink V2 Extension 타입의 사용자 정의 메세지 전송
+     * @param   target_cid  target component id ("MavMessage.h" 참고)
+     * @param   msg_type    message type ("MavMessage.h" 참고)
+     * @param   msg_text    사용자 정의 메세지
+     * @return  0:success, other:failed
+     */
+    int  PublishMessage(uint8_t target_cid, uint16_t msg_type, MAV::Message& msg_text);
 
 private:
 

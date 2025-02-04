@@ -48,7 +48,7 @@ public:
      * @ingroup signals
      * @param   _1  수신 패킷
      */
-    using SigMessageArrived = boost::signals2::signal<void(ZMQ::Packet&)>;
+    using SigMessageArrived = boost::signals2::signal<void(ZMQ::Message&)>;
 
     /**
      * @ref     SigMessageArrived

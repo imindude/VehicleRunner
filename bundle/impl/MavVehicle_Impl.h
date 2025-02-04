@@ -22,6 +22,7 @@ public:
 
     int  Exec();
     void Stop();
+    int  PublishMessage(uint8_t target_cid, uint16_t msg_type, MAV::Message& msg_text);
 
 private:
 

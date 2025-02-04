@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <iostream>
+#include <cstdint>
 
 #define ZMQ_VEHICLE_ID_UNKNOWN    0
 #define ZMQ_VEHICLE_ID_LEADER     1
@@ -52,9 +52,9 @@ struct Footer
 #pragma pack(push, 1)
 struct Position
 {
-    float latitude_deg_;  ///< 위도
-    float longitude_deg_; ///< 경도
-    float altitude_m_;    ///< 고도 (RTK base를 0으로 하는 고도 정보. RTK base는 리더가 제공)
+    double latitude_deg_;  ///< 위도
+    double longitude_deg_; ///< 경도
+    float  altitude_m_;    ///< 고도 (RTK base를 0으로 하는 고도 정보. RTK base는 리더가 제공)
 };
 #pragma pack(pop)
 
@@ -75,13 +75,12 @@ struct Velocity
  * @brief   0MQ 메세지를 간단하게 핸들링하기 위한 구조체/공용체 정의
  */
 #pragma pack(push, 1)
-struct Packet
+struct Message
 {
     Header header_; ///< 메세지 식별자
 
     union Payload
     {
-        uint8_t  stream_[1]; ///< 연속된 메모리열 형태로의 접근을 위한 trick
         Position position_;  ///< EPSG:4326 좌표계의 경위도 및 고도
         Velocity velocity_;  ///< NED 좌표계로 표현되는 vehicle의 속도 (m/s)
     } payload_;

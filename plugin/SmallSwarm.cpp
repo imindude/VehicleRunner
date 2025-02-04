@@ -5,7 +5,7 @@
 
 SmallSwarm::SmallSwarm(Config& config)
 {
-    _impl = std::make_unique<SmallSwarm_Impl>(config);
+    _impl = std::make_shared<SmallSwarm_Impl>(config);
 }
 
 int SmallSwarm::Exec()

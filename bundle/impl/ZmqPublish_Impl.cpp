@@ -19,7 +19,7 @@ ZmqPublish_Impl::~ZmqPublish_Impl()
 int ZmqPublish_Impl::Exec()
 {
 #ifndef NDEBUG
-    std::cout << "0MQ Publish URL : " << _config.local_url_ << std::endl;
+    std::cout << "0MQ[" << (int)_config.vehicle_id_ << "] Publish URL : " << _config.local_url_ << std::endl;
 #endif
     _zmq_socket.bind(_config.local_url_);
     return 0;
@@ -33,46 +33,46 @@ void ZmqPublish_Impl::Stop()
     _zmq_context.close();
 }
 
-int ZmqPublish_Impl::Publish(ZMQ::Packet& packet)
+int ZmqPublish_Impl::Publish(ZMQ::Message& msg_text)
 {
     int result = 0;
 
     do {
-        if (packet.header_.vehicle_id_ != _config.vehicle_id_)
+        if (msg_text.header_.vehicle_id_ != _config.vehicle_id_)
         {
-            result = -EPERM;
+            result = -EINVAL;
             break;
         }
 
-        size_t message_size = 0;
+        size_t text_size = 0;
 
-        switch (packet.header_.message_id_)
+        switch (msg_text.header_.message_id_)
         {
         case ZMQ_MSG_VEHICLE_POSITION:
-            message_size = sizeof(ZMQ::Position);
+            text_size = sizeof(ZMQ::Position);
             break;
         case ZMQ_MSG_VEHICLE_VELOCITY:
-            message_size = sizeof(ZMQ::Velocity);
+            text_size = sizeof(ZMQ::Velocity);
             break;
         default:
             break;
         }
 
-        if (message_size == 0)
+        if (text_size == 0)
         {
-            result = -ENXIO;
+            result = -EBADR;
             break;
         }
 
-        message_size += sizeof(ZMQ::Header);
+        text_size += sizeof(ZMQ::Header);
 
-        zmq::message_t message(message_size + sizeof(ZMQ::Footer));
+        zmq::message_t message(text_size + sizeof(ZMQ::Footer));
         ZMQ::Footer    footer {
-            .checksum_ = Checksum::crc8ccitt(reinterpret_cast<uint8_t*>(&packet), message_size),
+            .checksum_ = Checksum::crc8ccitt(reinterpret_cast<uint8_t*>(&msg_text), text_size),
         };
 
-        std::memcpy(message.data(), &packet, message_size);
-        std::memcpy(static_cast<uint8_t*>(message.data()) + message_size, &footer, sizeof(footer));
+        std::memcpy(message.data(), &msg_text, text_size);
+        std::memcpy(static_cast<uint8_t*>(message.data()) + text_size, &footer, sizeof(footer));
 
         {
             std::lock_guard<std::mutex> locker(_publish_lock);

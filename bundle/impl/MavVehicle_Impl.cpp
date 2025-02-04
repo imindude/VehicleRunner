@@ -19,9 +19,9 @@ MavVehicle_Impl::~MavVehicle_Impl()
 int MavVehicle_Impl::Exec()
 {
 #ifndef NDEBUG
-    std::cout << "MAVLink URL : " << _config.connect_url_ << std::endl;
-    std::cout << "External Log: " << _config.log_wo_sd_ << std::endl;
-    std::cout << "RAM Mission : " << _config.plan_wo_sd_ << std::endl;
+    std::cout << "MAVLink URL    : " << _config.connect_url_ << std::endl;
+    std::cout << " > External Log: " << _config.log_wo_sd_ << std::endl;
+    std::cout << " > RAM Mission : " << _config.plan_wo_sd_ << std::endl;
 #endif
 
     int result = 0;
@@ -38,7 +38,7 @@ int MavVehicle_Impl::Exec()
 #ifndef NDEBUG
             std::cerr << "MAVLink Connection failed" << std::endl;
 #endif
-            result = -ENOENT;
+            result = -ECONNREFUSED;
             break;
         }
 
@@ -61,6 +61,47 @@ void MavVehicle_Impl::Stop()
 
     _mavsdk->unsubscribe_on_new_system(_hmav_new_system);
     _mavsdk.reset();
+}
+
+int MavVehicle_Impl::PublishMessage(uint8_t target_cid, uint16_t msg_type, MAV::Message& msg_content)
+{
+    int result = 0;
+
+    do {
+        if (not _passthru)
+        {
+            result = -EUNATCH;
+            break;
+        }
+
+        auto r = _passthru->queue_message([&](MavlinkAddress address, uint8_t channel)
+                                          {
+            mavlink_message_t message;
+            mavlink_v2_extension_t extension {
+                .message_type = msg_type,
+                .target_network = MAVMSG_NET_ID_BROADCAST,
+                .target_system = MAVMSG_SYS_ID_BROADCAST,
+                .target_component = target_cid,
+                .payload { 0 },
+            };
+            std::memcpy(extension.payload, msg_content.stream_, sizeof(msg_content.stream_));
+            mavlink_msg_v2_extension_encode_chan(
+                address.system_id,
+                address.component_id,
+                channel,
+                &message,
+                &extension
+            );
+            return message; });
+
+        if (r != mavsdk::MavlinkPassthrough::Result::Success)
+        {
+            result = -EAGAIN;
+            break;
+        }
+    } while (false);
+
+    return result;
 }
 
 #pragma endregion public_method
@@ -86,7 +127,7 @@ void MavVehicle_Impl::subscribe()
             [&]()
             {
                 auto sh = std::make_shared<mavsdk::Shell>(_system);
-                sh->subscribe_receive([](std::string) {});
+                sh->subscribe_receive([](std::string) { });
 
                 if (_config.log_wo_sd_)
                 {

@@ -17,7 +17,7 @@ public:
 
     int  Exec();
     void Stop();
-    int  Publish(ZMQ::Packet& packet);
+    int  Publish(ZMQ::Message& msg_text);
 
 private:
 

@@ -27,7 +27,7 @@ int MqttClient_Impl::Exec()
 
     _mqtt_client->set_callback(*_mqtt_callback);
 
-    return (_mqtt_client->connect(mqtt_options) == nullptr) ? -EPERM : 0;
+    return (_mqtt_client->connect(mqtt_options) == nullptr) ? -ECONNREFUSED : 0;
 }
 
 void MqttClient_Impl::Stop()

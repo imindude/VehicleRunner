@@ -17,9 +17,9 @@ void ZmqPublish::Stop()
     return _impl->Stop();
 }
 
-int ZmqPublish::Publish(ZMQ::Packet& packet)
+int ZmqPublish::Publish(ZMQ::Message& msg_text)
 {
-    return _impl->Publish(packet);
+    return _impl->Publish(msg_text);
 }
 
 #pragma endregion public_method
