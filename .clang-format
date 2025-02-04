@@ -1,0 +1,24 @@
+---
+Language: Cpp
+BasedOnStyle: WebKit
+# TabWidth: 4
+BreakBeforeBraces: Allman
+AlignAfterOpenBracket: Align            # 매개변수 정렬
+AlignConsecutiveMacros: true            # 매크로 정렬
+AlignConsecutiveAssignments: true       # 연속적인 변수 초기화 정렬
+AlignConsecutiveDeclarations: true      # 연속적인 타입 변수 정렬
+AlignTrailingComments: true             # 주석 정렬
+BinPackArguments: true                  # 매개변수 정렬
+BinPackParameters: true                 # 선언시 매개변수 정렬
+KeepEmptyLinesAtTheStartOfBlocks: true
+MaxEmptyLinesToKeep: 1
+EmptyLineAfterAccessModifier: Always
+# ColumnLimit: 120
+AllowShortBlocksOnASingleLine: true
+# AllowShortCaseLabelsOnASingleLine: false
+# AllowShortEnumsOnASingleLine: true
+# AllowShortFunctionsOnASingleLine: true
+# AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: All
+AllowShortLoopsOnASingleLine: true
+...

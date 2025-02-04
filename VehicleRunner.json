@@ -1,0 +1,23 @@
+{
+    "MAVLink URL": "udp://:14550",
+    "MAV Log w/o SD": false,
+    "MAV Plan w/o SD": false,
+
+    "Plugin List": [
+        "SmallSwarm"
+    ],
+
+    "SmallSwarm Section": {
+        "Leader": true,
+        "Sub-Leader": false,
+        "Member No": 0,
+        "Leader URL": "tcp://172.24.200.10:9872",
+        "Sub-Leader URL": "tcp://172.24.200.110:9872",
+        "Member 1": "tcp://172.24.200.111:9872",
+        "Member 2": "tcp://172.24.200.112:9872",
+        "Member 3": "tcp://172.24.200.113:9872",
+        "Plugin Name": "SmallSwarm"
+    },
+
+    "EOF": "eof"
+}
