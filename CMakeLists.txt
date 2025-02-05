@@ -47,7 +47,7 @@ endif()
 
 ## ---------------------------------------------------------------------------------------------------------------------
 
-find_package(Boost REQUIRED COMPONENTS system thread chrono filesystem)
+find_package(Boost REQUIRED COMPONENTS system thread chrono)
 find_package(PahoMqttCpp REQUIRED)
 # find_package(ZeroMQ REQUIRED)
 # find_package(msgpack)

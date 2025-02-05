@@ -40,19 +40,18 @@ void SmallSwarm_Impl::Stop()
 
 void SmallSwarm_Impl::run()
 {
-    ZMQ::Message message_text;
+    // ZMQ::Message message_text;
 
-    message_text.header_.vehicle_id_ = _config.vehicle_id_,
-    message_text.header_.message_id_ = ZMQ_MSG_UNKNOWN_MESSAGE;
+    // message_text.header_.vehicle_id_ = _config.vehicle_id_,
+    // message_text.header_.message_id_ = ZMQ_MSG_UNKNOWN_MESSAGE;
 
     // for stabilization delay
     boost::this_thread::sleep_for(boost::chrono::milliseconds(500));
 
     while (not _run_thread->interruption_requested())
     {
-        // boost::this_thread::sleep_for(boost::chrono::milliseconds(LOOP_DELAY_MS));
-        boost::this_thread::sleep_for(boost::chrono::milliseconds(1000));
-
+        boost::this_thread::sleep_for(boost::chrono::milliseconds(LOOP_DELAY_MS));
+#if 0
         int64_t now_ms = boost::chrono::duration_cast<boost::chrono::milliseconds>(
                              boost::chrono::system_clock::now().time_since_epoch())
                              .count();
@@ -62,6 +61,7 @@ void SmallSwarm_Impl::run()
 
         _config.zmq_publish_->Publish(message_text);
         std::cout << "0MQ_PUB[" << (int)message_text.header_.vehicle_id_ << "] " << now_ms << std::endl;
+#endif
     }
 }
 
@@ -69,15 +69,15 @@ void SmallSwarm_Impl::run()
 
 #pragma region signal_slot
 
-void SmallSwarm_Impl::slotZmqMessageArrived(ZMQ::Message& msg_text)
+void SmallSwarm_Impl::slotZmqMessageArrived([[maybe_unused]] ZMQ::Message& msg_text)
 {
-    if (msg_text.header_.message_id_ == ZMQ_MSG_VEHICLE_POSITION)
-    {
-        int64_t millis;
+    // if (msg_text.header_.message_id_ == ZMQ_MSG_VEHICLE_POSITION)
+    // {
+    //     int64_t millis;
 
-        std::memcpy(&millis, &msg_text.payload_, sizeof(millis));
-        std::cout << "0MQ_SUB[" << (int)msg_text.header_.vehicle_id_ << "] " << millis << std::endl;
-    }
+    //     std::memcpy(&millis, &msg_text.payload_, sizeof(millis));
+    //     std::cout << "0MQ_SUB[" << (int)msg_text.header_.vehicle_id_ << "] " << millis << std::endl;
+    // }
 }
 
 #pragma endregion signal_slot

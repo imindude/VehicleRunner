@@ -1,7 +1,3 @@
-/**
- * @author      imindude@gmail.com
- */
-
 #include "AppMain.h"
 #include <csignal>
 #include <iostream>
