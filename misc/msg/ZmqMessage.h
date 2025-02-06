@@ -11,13 +11,13 @@
 #define ZMQ_VEHICLE_ID_UNKNOWN    0
 #define ZMQ_VEHICLE_ID_LEADER     1
 #define ZMQ_VEHICLE_ID_SUB_LEADER 2
-#define ZMQ_VEHICLE_ID_MEMBER_1   11
-#define ZMQ_VEHICLE_ID_MEMBER_2   12
-#define ZMQ_VEHICLE_ID_MEMBER_3   13
+#define ZMQ_VEHICLE_ID_MEMBER_NUL 10
+#define ZMQ_VEHICLE_ID_MEMBER_1   (ZMQ_VEHICLE_ID_MEMBER_NUL + 1)
+#define ZMQ_VEHICLE_ID_MEMBER_2   (ZMQ_VEHICLE_ID_MEMBER_NUL + 2)
+#define ZMQ_VEHICLE_ID_MEMBER_3   (ZMQ_VEHICLE_ID_MEMBER_NUL + 3)
 
-#define ZMQ_MSG_UNKNOWN_MESSAGE  0
-#define ZMQ_MSG_VEHICLE_POSITION 1
-#define ZMQ_MSG_VEHICLE_VELOCITY 2
+#define ZMQ_MSG_UNKNOWN_MESSAGE 0
+#define ZMQ_MSG_VEHICLE_PAYLOAD 1
 
 #pragma region zmq_ns
 namespace ZMQ
@@ -35,7 +35,7 @@ struct Header
 #pragma pack(pop)
 
 /**
- * @brief   0MQ 메세지의 postfix
+ * @brief   0MQ 메세지의 postfix\n
  *          메세지의 checksum
  */
 #pragma pack(push, 1)
@@ -46,8 +46,7 @@ struct Footer
 #pragma pack(pop)
 
 /**
- * @brief   ZMQMSG_VEHICLE_POSITION\n
- *          EPSG:4326 좌표계
+ * @brief   EPSG:4326 좌표계
  */
 #pragma pack(push, 1)
 struct Position
@@ -59,8 +58,7 @@ struct Position
 #pragma pack(pop)
 
 /**
- * @brief   ZMQMSG_VEHICLE_VELOCITY\n
- *          NED좌표계
+ * @brief   NED좌표계
  */
 #pragma pack(push, 1)
 struct Velocity
@@ -72,20 +70,25 @@ struct Velocity
 #pragma pack(pop)
 
 /**
+ * @brief   payload의 내용이 많지 않은 상태에서 메세지를 다수로 쪼개는 것이 별로인 듯하여 하나로 뭉쳐놓음
+ */
+#pragma pack(push, 1)
+struct Payload
+{
+    Position position_; ///< EPSG:4326 좌표계의 경위도 및 고도
+    Velocity velocity_; ///< NED 좌표계로 표현되는 vehicle의 속도 (m/s)
+};
+#pragma pack(pop)
+
+/**
  * @brief   0MQ 메세지를 간단하게 핸들링하기 위한 구조체/공용체 정의
  */
 #pragma pack(push, 1)
 struct Message
 {
-    Header header_; ///< 메세지 식별자
-
-    union Payload
-    {
-        Position position_;  ///< EPSG:4326 좌표계의 경위도 및 고도
-        Velocity velocity_;  ///< NED 좌표계로 표현되는 vehicle의 속도 (m/s)
-    } payload_;
-
-    Footer footer_; ///< payload부분이 가변이라, 실제 쓸 일은 없을 듯 (자리만 잡아놓는)
+    Header  header_;  ///< 메세지 식별자
+    Payload payload_; ///< 메세지 내용
+    Footer  footer_;  ///< 메세지 체크섬
 };
 #pragma pack(pop)
 

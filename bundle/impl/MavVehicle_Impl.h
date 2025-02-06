@@ -5,6 +5,7 @@
 #include <mavsdk/plugins/log_streaming/log_streaming.h>
 #include <mavsdk/plugins/mavlink_passthrough/mavlink_passthrough.h>
 #include <mavsdk/plugins/param/param.h>
+#include <mavsdk/plugins/telemetry/telemetry.h>
 #include <mavsdk/system.h>
 #include <thread>
 
@@ -23,6 +24,8 @@ public:
     int  Exec();
     void Stop();
     int  PublishMessage(uint8_t target_cid, uint16_t msg_type, MAV::Message& msg_text);
+    int  GetPosition(MavVehicle::PositionLlh& llh);
+    int  GetVelocity(MavVehicle::VelocityNed& ned);
 
 private:
 
@@ -45,6 +48,7 @@ private:
     std::shared_ptr<mavsdk::Mavsdk>             _mavsdk;
     std::shared_ptr<mavsdk::System>             _system;
     std::shared_ptr<mavsdk::Param>              _param;
+    std::shared_ptr<mavsdk::Telemetry>          _telemetry;
     std::shared_ptr<mavsdk::LogStreaming>       _logging;
     std::shared_ptr<mavsdk::MavlinkPassthrough> _passthru;
     mavsdk::Mavsdk::NewSystemHandle             _hmav_new_system;

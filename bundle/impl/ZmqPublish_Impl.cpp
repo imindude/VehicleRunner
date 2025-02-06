@@ -33,50 +33,32 @@ void ZmqPublish_Impl::Stop()
     _zmq_context.close();
 }
 
-int ZmqPublish_Impl::Publish(ZMQ::Message& msg_text)
+int ZmqPublish_Impl::Publish(uint8_t msg_id, ZMQ::Payload& payload)
 {
     int result = 0;
 
     do {
-        if (msg_text.header_.vehicle_id_ != _config.vehicle_id_)
+        if (msg_id != ZMQ_MSG_VEHICLE_PAYLOAD)
         {
-            result = -EINVAL;
+            result = -ENOMSG;
             break;
         }
 
-        size_t text_size = 0;
-
-        switch (msg_text.header_.message_id_)
-        {
-        case ZMQ_MSG_VEHICLE_POSITION:
-            text_size = sizeof(ZMQ::Position);
-            break;
-        case ZMQ_MSG_VEHICLE_VELOCITY:
-            text_size = sizeof(ZMQ::Velocity);
-            break;
-        default:
-            break;
-        }
-
-        if (text_size == 0)
-        {
-            result = -EBADR;
-            break;
-        }
-
-        text_size += sizeof(ZMQ::Header);
-
-        zmq::message_t message(text_size + sizeof(ZMQ::Footer));
-        ZMQ::Footer    footer {
-            .checksum_ = Checksum::crc8ccitt(reinterpret_cast<uint8_t*>(&msg_text), text_size),
+        ZMQ::Message message {
+            .header_ {
+                .vehicle_id_ = _config.vehicle_id_,
+                .message_id_ = msg_id,
+            },
+            .payload_ = payload,
+            .footer_ { 0 },
         };
+        message.footer_.checksum_ = Checksum::crc8ccitt(
+            reinterpret_cast<uint8_t*>(&message), sizeof(ZMQ::Message) - sizeof(ZMQ::Footer));
 
-        std::memcpy(message.data(), &msg_text, text_size);
-        std::memcpy(static_cast<uint8_t*>(message.data()) + text_size, &footer, sizeof(footer));
-
+        zmq::message_t packet(&message, sizeof(ZMQ::Message));
         {
             std::lock_guard<std::mutex> locker(_publish_lock);
-            _zmq_socket.send(message, zmq::send_flags::none);
+            _zmq_socket.send(packet, zmq::send_flags::none);
         }
     } while (false);
 

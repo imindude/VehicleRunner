@@ -54,31 +54,31 @@ void ZmqSubscribe_Impl::Stop()
 
 void ZmqSubscribe_Impl::run(uint8_t vehicle_id)
 {
-    zmq::message_t message;
-    ZMQ::Message   msg_text;
+    zmq::message_t packet;
+    ZMQ::Message   message;
 
     // for stabilization delay
     boost::this_thread::sleep_for(boost::chrono::milliseconds(500));
 
     while (not _thread->interruption_requested())
     {
-        auto result = _zmq_socket.recv(message, zmq::recv_flags::none);
+        auto result = _zmq_socket.recv(packet, zmq::recv_flags::none);
 
         if (result.has_value() and (result.value() > 0))
         {
             auto size = result.value();
 
-            std::memcpy(&msg_text, message.data(), size);
-            if (msg_text.header_.vehicle_id_ != vehicle_id)
+            std::memcpy(&message, packet.data(), size);
+            if (message.header_.vehicle_id_ != vehicle_id)
                 continue;
 
             ZMQ::Footer footer {
-                .checksum_ = Checksum::crc8ccitt(reinterpret_cast<uint8_t*>(&msg_text), size - sizeof(ZMQ::Footer)),
+                .checksum_ = Checksum::crc8ccitt(reinterpret_cast<uint8_t*>(&message), size - sizeof(ZMQ::Footer)),
             };
-            if (footer.checksum_ == msg_text.footer_.checksum_)
-                _sigMessageArrived(msg_text);
+            if (footer.checksum_ == message.footer_.checksum_)
+                _sigMessageArrived(message);
 
-            message.rebuild();
+            packet.rebuild();
         }
     }
 }

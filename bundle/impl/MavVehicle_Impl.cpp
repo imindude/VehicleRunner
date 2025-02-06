@@ -104,6 +104,43 @@ int MavVehicle_Impl::PublishMessage(uint8_t target_cid, uint16_t msg_type, MAV::
     return result;
 }
 
+int MavVehicle_Impl::GetPosition(MavVehicle::PositionLlh& llh)
+{
+    int result = -EUNATCH;
+
+    if (_telemetry)
+    {
+        auto position = _telemetry->position();
+
+        llh.latitude_deg_   = position.latitude_deg;
+        llh.longitude_deg_  = position.longitude_deg;
+        llh.msl_altitude_m_ = position.absolute_altitude_m;
+        llh.rel_altitude_m_ = position.relative_altitude_m;
+
+        result = 0;
+    }
+
+    return result;
+}
+
+int MavVehicle_Impl::GetVelocity(MavVehicle::VelocityNed& ned)
+{
+    int result = -EUNATCH;
+
+    if (_telemetry)
+    {
+        auto velocity = _telemetry->velocity_ned();
+
+        ned.north_mps_ = velocity.north_m_s;
+        ned.east_mps_  = velocity.east_m_s;
+        ned.down_mps_  = velocity.down_m_s;
+
+        result = 0;
+    }
+
+    return result;
+}
+
 #pragma endregion public_method
 
 #pragma region private_method
@@ -212,9 +249,10 @@ void MavVehicle_Impl::onMavSystemIsConnected(bool connected)
     {
         _system->enable_timesync();
 
-        _param    = std::make_shared<mavsdk::Param>(_system);
-        _logging  = std::make_shared<mavsdk::LogStreaming>(_system);
-        _passthru = std::make_shared<mavsdk::MavlinkPassthrough>(_system);
+        _param     = std::make_shared<mavsdk::Param>(_system);
+        _telemetry = std::make_shared<mavsdk::Telemetry>(_system);
+        _logging   = std::make_shared<mavsdk::LogStreaming>(_system);
+        _passthru  = std::make_shared<mavsdk::MavlinkPassthrough>(_system);
 
         subscribe();
     }
@@ -225,8 +263,10 @@ void MavVehicle_Impl::onMavSystemIsConnected(bool connected)
         _system->unsubscribe_is_connected(_hmav_is_connected);
 
         _param.reset();
+        _telemetry.reset();
         _logging.reset();
         _passthru.reset();
+
         _system.reset();
     }
 }

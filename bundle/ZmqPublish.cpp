@@ -17,9 +17,9 @@ void ZmqPublish::Stop()
     return _impl->Stop();
 }
 
-int ZmqPublish::Publish(ZMQ::Message& msg_text)
+int ZmqPublish::Publish(uint8_t msg_id, ZMQ::Payload& payload)
 {
-    return _impl->Publish(msg_text);
+    return _impl->Publish(msg_id, payload);
 }
 
 #pragma endregion public_method

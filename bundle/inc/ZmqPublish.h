@@ -34,10 +34,11 @@ public:
     void Stop();
     /**
      * @brief   ZeroMQ 메세지 전송
-     * @param   msg_text    사용자 정의 메세지
+     * @param   msg_id      메세지 식별자
+     * @param   payload     메세지 내용
      * @return  0:success, other:failed
      */
-    int  Publish(ZMQ::Message& msg_text);
+    int  Publish(uint8_t msg_id, ZMQ::Payload& payload);
 
 private:
 

@@ -21,6 +21,21 @@ class MavVehicle
 
 public:
 
+    struct PositionLlh
+    {
+        double latitude_deg_ { 0. };
+        double longitude_deg_ { 0. };
+        float  msl_altitude_m_ { 0.f };
+        float  rel_altitude_m_ { 0.f };
+    };
+
+    struct VelocityNed
+    {
+        float north_mps_ { 0.f };
+        float east_mps_ { 0.f };
+        float down_mps_ { 0.f };
+    };
+
     struct Config
     {
         std::string connect_url_; ///< ex) "udp://:14550"
@@ -40,7 +55,20 @@ public:
      * @param   msg_text    사용자 정의 메세지
      * @return  0:success, other:failed
      */
-    int  PublishMessage(uint8_t target_cid, uint16_t msg_type, MAV::Message& msg_text);
+    int PublishMessage(uint8_t target_cid, uint16_t msg_type, MAV::Message& msg_text);
+    /**
+     * @brief   EPSG:4326 좌표계의 경위도(degree) 및 고도(meter)\n
+     *          고도는 MSL고도와, 이륙지점을 기준으로 하는 상대 고도
+     * @param   llh     vehicle 3차원 위치 정보 수신 버퍼
+     * @return  0:success, other:failed
+     */
+    int  GetPosition(PositionLlh& llh);
+    /**
+     * @brief   NED 좌표계로 표현되는 vehicle의 속도 (m/s)
+     * @param   ned     vehicle 3차원 속도 정보 수신 버퍼
+     * @return  0:success, other:failed
+     */
+    int  GetVelocity(VelocityNed& ned);
 
 private:
 

@@ -17,7 +17,7 @@ public:
 
     int  Exec();
     void Stop();
-    int  Publish(ZMQ::Message& msg_text);
+    int  Publish(uint8_t msg_id, ZMQ::Payload& payload);
 
 private:
 

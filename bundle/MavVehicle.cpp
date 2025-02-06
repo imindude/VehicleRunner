@@ -22,6 +22,16 @@ int MavVehicle::PublishMessage(uint8_t target_cid, uint16_t msg_type, MAV::Messa
     return _impl->PublishMessage(target_cid, msg_type, msg_content);
 }
 
+int MavVehicle::GetPosition(PositionLlh& llh)
+{
+    return _impl->GetPosition(llh);
+}
+
+int MavVehicle::GetVelocity(VelocityNed& ned)
+{
+    return _impl->GetVelocity(ned);
+}
+
 #pragma endregion public_method
 
 #pragma region public_signal

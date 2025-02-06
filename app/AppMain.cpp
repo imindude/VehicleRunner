@@ -113,23 +113,29 @@ void AppMain::_pluginSmallSwarm(Json::Value& json)
     }
 
     int vehicle_id    = json[JSON_KEY_SMALL_SWARM_MEMBER_NO].asInt();
-    int member_list[] = { ZMQ_VEHICLE_ID_MEMBER_1, ZMQ_VEHICLE_ID_MEMBER_2, ZMQ_VEHICLE_ID_MEMBER_3 };
 
-    for (int n = 0; n < 3; n++)
+    for (int n = 1; ; n++)
     {
         std::string connect_url = std::string(JSON_KEY_SMALL_SWARM_MEMBER_PARTIAL) + std::to_string(n + 1);
 
-        if ((not publish_option.has_value()) and (vehicle_id == (n + 1)))
+        if (not json[connect_url].empty())
         {
-            pub_config.vehicle_id_ = member_list[n];
-            pub_config.local_url_  = json[connect_url].asString();
-            publish_option         = pub_config;
+            if ((not publish_option.has_value()) and (vehicle_id == (n + 1)))
+            {
+                pub_config.vehicle_id_ = ZMQ_VEHICLE_ID_MEMBER_NUL + n;
+                pub_config.local_url_  = json[connect_url].asString();
+                publish_option         = pub_config;
+            }
+            else
+            {
+                sub_config.vehicle_id_ = ZMQ_VEHICLE_ID_MEMBER_NUL + n;
+                sub_config.remote_url_ = json[connect_url].asString();
+                subscribe_configs.push_back(sub_config);
+            }
         }
         else
         {
-            sub_config.vehicle_id_ = member_list[n];
-            sub_config.remote_url_ = json[connect_url].asString();
-            subscribe_configs.push_back(sub_config);
+            break;
         }
     }
 
